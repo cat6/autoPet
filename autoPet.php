@@ -4,11 +4,7 @@ $animalType = "Rodent";  // Rodent, Cat
 $gender = "";	// ",gender_f" - female, ",gender_m" for male
 $date = date("l jS \of F Y h:i A");
 
-// ideally cron should look like this: /usr/bin/php /home/cPusername/public_html/path/to/cron.php
-// /usr/bin/php /home/bikewdts/public_html/cron/autoPet.php
-
 $animalSearch = $animalGroup . $gender;
-
 
 $rowsToRequest = 10;
 $page = 1;
@@ -67,46 +63,45 @@ function curl($url) {
 function traverseRow($line)
 {
 	// Returns an array of animal data based upon $row
-
-	//print "LINE: " . $line . "<br/><br/>";
 	$i = 0;
-
+	$tmp = "";
 	foreach($line->find('td') as $element)
 	{
 		if($i == 0)
 		{
-			print fixImage($element) . "<br/>\n";
+			$tmp .= fixImage($element->innertext) . "<br/>\n";
 		}		
 		if($i == 1)
 		{
-			print "Type: " . $element . "<br/>\n";
+			$tmp .= "Type: " . $element->innertext . "<br/>\n";
 		}
 		if($i == 2)
 		{
-			print "Name: " . $element . "<br/>\n";
+			$tmp .= "Name: " . $element->innertext . "<br/>\n";
 		}
 		if($i == 3)
 		{
-			print "Gender: " . $element . "<br/>\n";
+			$tmp .= "Gender: " . $element->innertext . "<br/>\n";
 		}
 		if($i == 4)
 		{
-			print "Colour: " . $element . "<br/>\n";
+			$tmp .= "Colour: " . $element->innertext. "<br/>\n";
 		}
 		if($i == 5)
 		{
-			print "Species: " . $element . "<br/>\n";
+			$tmp .= "Species: " . $element->innertext . "<br/>\n";
 		}
 		if($i == 6)
 		{
-			print "Age: " . $element . "<br/>\n";
+			$tmp .= "Age: " . $element->innertext . "<br/>\n";
 		}
 		if($i == 7)
 		{
-			print "Location: " . $element . "<br/>\n\n";
+			$tmp .= "Location: " . $element->innertext . "<br/>\n\n";
 		}
 		$i++;
 	}
+	return $tmp;
 }
 
 // Include the library
@@ -116,18 +111,23 @@ include('simple_html_dom.php');
 //$html = file_get_html($url);
 //$url = paginate($url, $page++);
 $html = file_get_html($url);
+$output = "";
 
-//print "url: " . $url . "<br/>";
 
-print "<!DOCTYPE html>\n<html>\n<head>\n<title>AutoPet: Animal Search Results " . $date . "</title>\n<meta charset='UTF-8'>\n</head>\n<body>\n";
-print "<div><h1>AutoPet Animal Search results for: " . $date . "</h1></div>";
+// Always set content-type when sending HTML email
+$headers = "MIME-Version: 1.0" . "\r\n";
+$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+
+
+$output .= "<!DOCTYPE html>\n<html>\n<head>\n<title>AutoPet: Animal Search Results " . $date . "</title>\n<meta charset='UTF-8'>\n</head>\n<body>\n";
+$output .= "<div><h1>AutoPet Animal Search results for: " . $date . "</h1></div>";
 $pos = (int)strpos($html->innertext, "Sorry!");
-//print "pos: " . (int)$pos . "<br/>";
+
 $j = 0;
 while($pos <= 0)
 {
 	$i = 0;
-	print "<p>\n";
+	$output .= "<p>\n";
 	// Find all images 
 	//print "<table>\n";
 	$rows = $html->find('tr');
@@ -139,22 +139,23 @@ while($pos <= 0)
 			//print "Animal $i:<br/>";
 			if(checkCriteria($row) == 1)
 			{
-				traverseRow($row, $i);
+				$output .= traverseRow($row, $i);
 				$i++;
 			}
 		}
 	}
-	//print "</table>\n";
-	print "</p>\n";
+	$output .= "</p>\n";
 	$page++;
 	$url = paginate($url, $page);
 	$html = file_get_html($url);
 	$pos = (int)strpos($html->innertext, "Sorry!");
 	$j += $i;
-	//print "pos:" . (int)$pos . "<br/>";
-	//print "html: " . $html->innertext . "<br/>";
  }
- print "No. of Records: " . $j . "<br/>";
- print "</body></html>";
+ $output .= "No. of Records: " . $j . "<br/>";
+ $output .= "</body></html>";
+
+
+
+ print $output;
 
 ?>
